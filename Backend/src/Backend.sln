@@ -1,0 +1,67 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Configurar Entity Framework con SQL Server
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer("Server=localhost;Database=MiBaseDeDatos;User Id=sa;Password=tu_contraseña;")
+);
+
+// Configurar servicios
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();
+
+// Contexto de base de datos
+public class AppDbContext : DbContext
+{
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+    public DbSet<Usuario> Usuarios { get; set; }
+}
+
+// Modelo de usuario
+public class Usuario
+{
+    public int Id { get; set; }
+    public string Nombre { get; set; }
+    public string Correo { get; set; }
+}
+
+// Controlador API
+[Route("api/[controller]")]
+[ApiController]
+public class UsuariosController : ControllerBase
+{
+    private readonly AppDbContext _context;
+
+    public UsuariosController(AppDbContext context)
+    {
+        _context = context;
+    }
+
+    [HttpGet]
+    public IActionResult GetUsuarios()
+    {
+        return Ok(_context.Usuarios.ToList());
+    }
+}
